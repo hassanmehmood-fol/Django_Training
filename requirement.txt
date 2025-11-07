@@ -1,2 +1,2 @@
-hello how are you?
-
+django==5.1.1
+djangorestframework==3.15.2
