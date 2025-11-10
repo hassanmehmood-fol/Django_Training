@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'profiles_api',
     'rest_framework',
+    'rest_framework_simplejwt',
+
+
 ]
 
 MIDDLEWARE = [
@@ -120,4 +123,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # 👇 Add this line at the very end
 AUTH_USER_MODEL = 'profiles_api.User'
+
+from datetime import timedelta
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'profiles_api.authentication.SimpleJWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # access token valid for 5 min
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    # refresh token valid for 1 day
+}
+
 
