@@ -1,4 +1,5 @@
 """Lightweight JWT authentication backend for the profiles API app."""
+
 # pylint: disable=no-member
 
 from typing import Optional, Tuple

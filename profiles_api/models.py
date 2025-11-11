@@ -1,9 +1,10 @@
 """Custom user model and manager for the profiles API app."""
+
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
-    PermissionsMixin
+    PermissionsMixin,
 )
 
 
@@ -39,9 +40,10 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     """Application user model using email as the username field."""
+
     ROLE_CHOICES = [
-        ('student', 'Student'),
-        ('teacher', 'Teacher'),
+        ("student", "Student"),
+        ("teacher", "Teacher"),
     ]
 
     email = models.EmailField(max_length=255, unique=True)

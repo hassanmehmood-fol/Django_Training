@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.conf import settings
+from django.db.models import Q
 from datetime import datetime, timedelta
 import jwt
 
@@ -21,13 +22,29 @@ class UserRegisterAPIView(APIView):
         return super().get_permissions()
 
     def get(self, request, pk=None):
+        # ✅ Step 1: Check if a search query is given
+        search_query = request.GET.get("search", None)
+
+        # ✅ Step 2: Single user fetch
         if pk:
             try:
                 user = User.objects.get(pk=pk)
                 serializer = UserSerializer(user)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+
+        # ✅ Step 3: If search query exists, filter users
+        elif search_query:
+            users = User.objects.filter(
+                Q(name__icontains=search_query) | Q(email__icontains=search_query)
+            )
+            serializer = UserSerializer(users, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ✅ Step 4: Else return all users
         else:
             users = User.objects.all()
             serializer = UserSerializer(users, many=True)
@@ -47,7 +64,15 @@ class UserRegisterAPIView(APIView):
         try:
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if request.user.id != user.id:
+            return Response(
+                {"error": "You are not allowed to edit other users."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = UserSerializer(user, data=request.data)
         if serializer.is_valid():
@@ -62,7 +87,15 @@ class UserRegisterAPIView(APIView):
         try:
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if request.user.id != user.id:
+            return Response(
+                {"error": "You are not allowed to edit other users."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
@@ -77,9 +110,25 @@ class UserRegisterAPIView(APIView):
         try:
             user = User.objects.get(pk=pk)
             user.delete()
-            return Response({"message": "User deleted successfully!"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "User deleted successfully!"}, status=status.HTTP_200_OK
+            )
         except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+ 
+        try:
+            user = User.objects.get(pk=pk)
+            user.delete()
+            return Response(
+                {"message": "User deleted successfully!"}, status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+              )
 
 
 class UserLoginAPIView(APIView):
