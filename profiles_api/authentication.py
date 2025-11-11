@@ -1,3 +1,6 @@
+"""Lightweight JWT authentication backend for the profiles API app."""
+# pylint: disable=no-member
+
 from typing import Optional, Tuple
 
 import jwt
@@ -54,4 +57,3 @@ class SimpleJWTAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed(_("User not found.")) from exc
 
         return user, token
-

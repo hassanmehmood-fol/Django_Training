@@ -1,3 +1,4 @@
+"""Custom user model and manager for the profiles API app."""
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -7,11 +8,14 @@ from django.contrib.auth.models import (
 
 
 class UserManager(BaseUserManager):
+    """Manager providing helpers to create regular users and superusers."""
+
     def create_user(self, email, name, password=None, **extra_fields):
+        """Create and return a new user with the given credentials and fields."""
         if not email:
             raise ValueError("Email field is required")
         if not extra_fields.get("role"):
-            raise ValueError("Role field is required")   
+            raise ValueError("Role field is required")
 
         email = self.normalize_email(email)
         user = self.model(email=email, name=name, **extra_fields)
@@ -20,9 +24,10 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, name, password=None, **extra_fields):
+        """Create and return a new superuser with elevated permissions."""
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("role", "teacher") 
+        extra_fields.setdefault("role", "teacher")
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True")
@@ -33,6 +38,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    """Application user model using email as the username field."""
     ROLE_CHOICES = [
         ('student', 'Student'),
         ('teacher', 'Teacher'),
@@ -40,14 +46,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES) 
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["name", "role"]  
+    REQUIRED_FIELDS = ["name", "role"]
 
     class Meta:
         db_table = "user"
