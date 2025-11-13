@@ -7,7 +7,7 @@
     ],
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "off",
-    "python.languageServer": "Pylance",
+    "python.languageServer": "None",
     "python.analysis.diagnosticMode": "openFilesOnly",
     "python.analysis.completeFunctionParens": true,
     "python.analysis.indexing": true,
@@ -67,7 +67,7 @@
         "source.organizeImports": "explicit"
     },
     "python-envs.pythonProjects": [],
-    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
     "python.pythonPath": "env\\Scripts\\python.exe"
 }
 

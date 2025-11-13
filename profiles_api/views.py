@@ -9,6 +9,9 @@ import jwt
 
 from .serializers import UserSerializer
 from .models import User
+from .serializers import FeedSerializer
+from .models import Feed
+from django.db.models import Count
 
 
 class UserRegisterAPIView(APIView):
@@ -22,10 +25,10 @@ class UserRegisterAPIView(APIView):
         return super().get_permissions()
 
     def get(self, request, pk=None):
-        # ✅ Step 1: Check if a search query is given
+     
         search_query = request.GET.get("search", None)
 
-        # ✅ Step 2: Single user fetch
+    
         if pk:
             try:
                 user = User.objects.get(pk=pk)
@@ -36,7 +39,6 @@ class UserRegisterAPIView(APIView):
                     {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
                 )
 
-        # ✅ Step 3: If search query exists, filter users
         elif search_query:
             users = User.objects.filter(
                 Q(name__icontains=search_query) | Q(email__icontains=search_query)
@@ -44,7 +46,7 @@ class UserRegisterAPIView(APIView):
             serializer = UserSerializer(users, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # ✅ Step 4: Else return all users
+    
         else:
             users = User.objects.all()
             serializer = UserSerializer(users, many=True)
@@ -119,18 +121,6 @@ class UserRegisterAPIView(APIView):
             )
 
  
-        try:
-            user = User.objects.get(pk=pk)
-            user.delete()
-            return Response(
-                {"message": "User deleted successfully!"}, status=status.HTTP_200_OK
-            )
-        except User.DoesNotExist:
-            return Response(
-                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
-              )
-
-
 class UserLoginAPIView(APIView):
     """Manual login with JWT"""
 
@@ -178,3 +168,54 @@ class UserLoginAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class FeedAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Fast query — har feed ke sath likes_count ek hi query me
+        feeds = Feed.objects.all().annotate(likes_count=Count("likes")).order_by("-created_at")
+        serializer = FeedSerializer(feeds, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        if request.user.role != "teacher":
+            return Response(
+                {"error": "Only teachers can create feeds."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = FeedSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class FeedLikeAPIView(APIView):
+    """Students can like or unlike a feed."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        """Like or unlike feed"""
+        try:
+            feed = Feed.objects.get(pk=pk)
+        except Feed.DoesNotExist:
+            return Response({"error": "Feed not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+
+  
+        if user.role != "student":
+            return Response({"error": "Only students can like feeds."}, status=status.HTTP_403_FORBIDDEN)
+
+     
+        if user in feed.likes.all():
+            feed.likes.remove(user)
+            message = "Feed unliked"
+        else:
+            feed.likes.add(user)
+            message = "Feed liked"
+
+        return Response({"message": message, "likes_count": feed.likes.count()}, status=status.HTTP_200_OK)

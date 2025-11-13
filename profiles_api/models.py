@@ -7,6 +7,8 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 
+from django.conf import settings
+
 
 class UserManager(BaseUserManager):
     """Manager providing helpers to create regular users and superusers."""
@@ -62,3 +64,30 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email} ({self.role})"
+    
+    
+    
+class Feed(models.Model):
+    """Model representing posts created by teachers."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="feeds"
+    )
+    text = models.TextField(max_length=1000, blank=True, null=True)
+    image = models.ImageField(upload_to="feeds/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    likes = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="liked_feeds",
+        blank=True
+    )
+
+    class Meta:
+        db_table = "feed"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Feed by {self.user.email} - {self.text[:30]}"    
